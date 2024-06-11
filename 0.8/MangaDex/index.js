@@ -4005,21 +4005,19 @@ const parseMangaList = async (object, source, thumbnailSelector) => {
     return results;
 };
 exports.parseMangaList = parseMangaList;
-const parseChapterListToManga = async (chapters, includedManga, source, thumbnailSelector) => {
+const parseChapterListToManga = async (chapters, source, thumbnailSelector) => {
     const results = [];
     const discoveredManga = new Set();
     for (const chapter of chapters) {
-        const mangaId = chapter.relationships.filter((x) => x.type == 'manga')[0]?.id;
-        if (!mangaId) {
+        const mangaRelationship = chapter.relationships.filter((x) => x.type == 'manga')[0];
+        if (mangaRelationship === undefined) {
             continue;
         }
-        const manga = includedManga.find((x) => x.id == mangaId);
-        if (!manga) {
-            continue;
-        }
-        const mangaDetails = manga.attributes;
+        const mangaId = mangaRelationship.id;
+        // It may be better to adjust the data model here, as RelationshipAttributes don't apply to the manga "includes" in this
+        const mangaDetails = mangaRelationship.attributes;
         const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
-        const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0];
+        const coverFileName = ''; // I don't yet have the cover file figured out
         const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`;
         if (!discoveredManga.has(mangaId)) {
