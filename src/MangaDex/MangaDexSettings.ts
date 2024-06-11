@@ -41,6 +41,14 @@ export async function getMangaThumbnail(stateManager: SourceStateManager) {
     return (await stateManager.retrieve('manga_thumbnail') ?? [MDImageQuality.getDefault('manga')])
 }
 
+export const getClientToken = async (stateManager: SourceStateManager): Promise<string> => {
+    return (await stateManager.retrieve('mdex_ctoken') as string) ?? ''
+}
+
+export const getClientSecret = async (stateManager: SourceStateManager): Promise<string> => {
+    return (await stateManager.retrieve('mdex_csecret') as string) ?? ''
+}
+
 export async function getAccessToken(stateManager: SourceStateManager) {
     const accessToken: string | undefined = await stateManager.keychain.retrieve('access_token')
     const refreshToken: string | undefined = await stateManager.keychain.retrieve('refresh_token')
@@ -191,6 +199,38 @@ async function _authEndpointRequest(requestManager: RequestManager, endpoint: 'l
     }
 
     return jsonData
+}
+
+export async function clientTokenSettings(stateManager: SourceStateManager) {
+    return App.createDUIInputField({
+        id: 'mdex_ctoken',
+        label: 'MangaDex Personal Client Token',
+        value: App.createDUIBinding({
+            get: () => getClientToken(stateManager),
+            set: async (newValue: string) => {
+                await stateManager.store(
+                    'mdex_ctoken',
+                    newValue
+                )
+            }
+        })
+    })
+}
+
+export async function clientSecretSettings(stateManager: SourceStateManager) {
+    return App.createDUIInputField({
+        id: 'mdex_csecret',
+        label: 'MangaDex Personal Client Secret',
+        value: App.createDUIBinding({
+            get: () => getClientSecret(stateManager),
+            set: async (newValue: string) => {
+                await stateManager.store(
+                    'mdex_csecret',
+                    newValue
+                )
+            }
+        })
+    })
 }
 
 export async function accountSettings(stateManager: SourceStateManager, requestManager: RequestManager) {
