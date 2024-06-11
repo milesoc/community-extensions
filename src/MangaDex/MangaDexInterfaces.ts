@@ -14,7 +14,6 @@ export interface MangaDexChapterSearchResponse {
     limit: number;
     offset: number;
     total: number;
-    included: MangaItem[];
 }
 
 export interface MangaItem {
