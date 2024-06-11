@@ -3470,7 +3470,7 @@ class MangaDex {
                     if (json.data === undefined) {
                         throw new Error(`Failed to parse json results for section ${section.section.title}`);
                     }
-                    section.section.items = await (0, MangaDexParser_1.parseChapterListToManga)(json.data, json.included, this, MangaDexSettings_1.getHomepageThumbnail);
+                    section.section.items = await (0, MangaDexParser_1.parseChapterListToManga)(json.data, this, MangaDexSettings_1.getHomepageThumbnail);
                     sectionCallback(section.section);
                 }
                 else {
