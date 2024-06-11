@@ -7,14 +7,24 @@ export interface MangaDexSearchResponse {
     total: number;
 }
 
+export interface MangaDexChapterSearchResponse {
+    result: string;
+    response: string;
+    data: ChapterItem[];
+    limit: number;
+    offset: number;
+    total: number;
+    included: MangaItem[];
+}
+
 export interface MangaItem {
     id: string;
     type: RelationshipType;
-    attributes: DatumAttributes;
+    attributes: MangaDatumAttributes;
     relationships: Relationship[];
 }
 
-export interface DatumAttributes {
+export interface MangaDatumAttributes {
     title: Title;
     altTitles: AltTitle[];
     description: PurpleDescription;
@@ -35,6 +45,28 @@ export interface DatumAttributes {
     version: number;
     availableTranslatedLanguages: string[];
     latestUploadedChapter: string;
+}
+
+export interface ChapterItem {
+    id: string;
+    type: RelationshipType;
+    attributes: ChapterDatumAttributes;
+    relationships: Relationship[];
+}
+
+export interface ChapterDatumAttributes {
+    title: Title;
+    volume: string;
+    chapter: string;
+    pages: number;
+    translatedLanguage: string;
+    uplodader: string;
+    externalUrl: string;
+    version: number;
+    createdAt: Date;
+    updatedAt: Date;
+    publishAt: Date;
+    readableAt: Date;
 }
 
 export interface AltTitle {

@@ -47,11 +47,14 @@ import {
 } from './MangaDexHelper'
 
 import {
-    parseMangaList
+    parseMangaList,
+    parseChapterListToManga
 } from './MangaDexParser'
 
 import tagJSON from './external/tag.json'
-import { MangaDexSearchResponse } from './MangaDexInterfaces'
+import { MangaDexSearchResponse,
+    MangaDexChapterSearchResponse
+ } from './MangaDexInterfaces'
 
 const MANGADEX_DOMAIN = 'https://mangadex.org'
 const MANGADEX_API = 'https://api.mangadex.org'
@@ -434,13 +437,12 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
             {
                 request: App.createRequest({
                     url: new URLBuilder(this.MANGADEX_API)
-                        .addPathComponent('manga')
+                        .addPathComponent('chapter')
                         .addQueryParameter('limit', 20)
-                        .addQueryParameter('hasAvailableChapters', true)
-                        .addQueryParameter('availableTranslatedLanguage', languages)
-                        .addQueryParameter('order', { latestUploadedChapter: 'desc' })
+                        .addQueryParameter('translatedLanguage', languages)
+                        .addQueryParameter('order', { readableAt: 'desc' })
                         .addQueryParameter('contentRating', ratings)
-                        .addQueryParameter('includes', ['cover_art'])
+                        .addQueryParameter('includes', ['manga'])
                         .buildUrl(),
                     method: 'GET'
                 }),
@@ -479,15 +481,27 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
             // Get the section data
             promises.push(
                 this.requestManager.schedule(section.request, 1).then(async (response) => {
-                    const json: MangaDexSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+                    if (section.section.id == 'latest_updates') {
+                        const json: MangaDexChapterSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
 
-                    if (json.data === undefined) {
-                        throw new Error(`Failed to parse json results for section ${section.section.title}`)
+                        if (json.data === undefined) {
+                            throw new Error(`Failed to parse json results for section ${section.section.title}`)
+                        }
+
+                        section.section.items = await parseChapterListToManga(json.data, json.included, this, getHomepageThumbnail)
+
+                        sectionCallback(section.section)
+                    } else {
+                        const json: MangaDexSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+
+                        if (json.data === undefined) {
+                            throw new Error(`Failed to parse json results for section ${section.section.title}`)
+                        }
+
+                        section.section.items = await parseMangaList(json.data, this, getHomepageThumbnail)
+
+                        sectionCallback(section.section)
                     }
-
-                    section.section.items = await parseMangaList(json.data, this, getHomepageThumbnail)
-
-                    sectionCallback(section.section)
                 })
             )
         }
