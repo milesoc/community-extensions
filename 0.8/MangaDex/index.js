@@ -4068,6 +4068,7 @@ const addFileNamesToManga = async (manga, covers, source, thumbnailSelector) => 
         const mangaId = mangaItem.mangaId;
         const coverItem = covers.find((x) => x.relationships.find((r) => r.type == 'manga')?.id == mangaId);
         if (coverItem === undefined) {
+            throw new Error('Failed to find cover image: ' + covers);
             continue;
         }
         const coverFileName = coverItem.attributes.fileName;
