@@ -3470,7 +3470,7 @@ class MangaDex {
                     if (json.data === undefined) {
                         throw new Error(`Failed to parse json results for section ${section.section.title}`);
                     }
-                    section.section.items = await (0, MangaDexParser_1.parseChapterListToManga)(json.data, this, MangaDexSettings_1.getHomepageThumbnail);
+                    section.section.items = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, this), MangaDexSettings_1.getHomepageThumbnail);
                     sectionCallback(section.section);
                 }
                 else {
@@ -3509,14 +3509,14 @@ class MangaDex {
             }
             case 'latest_updates': {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                    .addPathComponent('manga')
-                    .addQueryParameter('limit', 100)
-                    .addQueryParameter('hasAvailableChapters', true)
-                    .addQueryParameter('availableTranslatedLanguage', languages)
-                    .addQueryParameter('order', { latestUploadedChapter: 'desc' })
+                    .addPathComponent('chapter')
+                    .addQueryParameter('limit', 20)
+                    .addQueryParameter('translatedLanguage', languages)
+                    .addQueryParameter('order', { readableAt: 'desc' })
+                    .addQueryParameter('contentRating', ratings)
                     .addQueryParameter('offset', offset)
                     .addQueryParameter('contentRating', ratings)
-                    .addQueryParameter('includes', ['cover_art'])
+                    .addQueryParameter('includes', ['manga'])
                     .buildUrl();
                 break;
             }
@@ -3539,14 +3539,43 @@ class MangaDex {
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
-        if (json.data === undefined) {
-            throw new Error('Failed to parse json results for getViewMoreItems');
+        if (homepageSectionId == 'latest_updates') {
+            const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
+            if (json.data === undefined) {
+                throw new Error('Failed to parse json results for getViewMoreItems');
+            }
+            results = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, this), MangaDexSettings_1.getHomepageThumbnail);
         }
-        results = await (0, MangaDexParser_1.parseMangaList)(json.data, this, MangaDexSettings_1.getHomepageThumbnail);
+        else {
+            const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
+            if (json.data === undefined) {
+                throw new Error('Failed to parse json results for getViewMoreItems');
+            }
+            results = await (0, MangaDexParser_1.parseMangaList)(json.data, this, MangaDexSettings_1.getHomepageThumbnail);
+        }
         return App.createPagedResults({
             results,
             metadata: { offset: offset + 100, collectedIds }
+        });
+    }
+    async appendCoverArt(sourceMangaAsync, thumbnailSelector) {
+        return sourceMangaAsync.then((sourceManga) => {
+            const request = App.createRequest({
+                url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
+                    .addPathComponent('cover')
+                    .addQueryParameter('manga', sourceManga.map((manga) => manga.mangaId))
+                    .addQueryParameter('includes', ['manga'])
+                    .buildUrl(),
+                method: 'GET'
+            });
+            const asyncResponse = this.requestManager.schedule(request, 1);
+            return asyncResponse.then(async (response) => {
+                if (response.status != 200) {
+                    return sourceManga;
+                }
+                const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
+                return (0, MangaDexParser_1.addFileNamesToManga)(sourceManga, json.data, this, thumbnailSelector);
+            });
         });
     }
     // Utility
@@ -3984,7 +4013,7 @@ exports.MDImageQuality = new MDImageQualityClass();
 },{}],75:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseChapterListToManga = exports.parseMangaList = void 0;
+exports.addFileNamesToManga = exports.parseChapterListToManga = exports.parseMangaList = void 0;
 const MangaDexHelper_1 = require("./MangaDexHelper");
 const parseMangaList = async (object, source, thumbnailSelector) => {
     const results = [];
@@ -4005,7 +4034,7 @@ const parseMangaList = async (object, source, thumbnailSelector) => {
     return results;
 };
 exports.parseMangaList = parseMangaList;
-const parseChapterListToManga = async (chapters, source, thumbnailSelector) => {
+const parseChapterListToManga = async (chapters, source) => {
     const results = [];
     const discoveredManga = new Set();
     for (const chapter of chapters) {
@@ -4016,9 +4045,10 @@ const parseChapterListToManga = async (chapters, source, thumbnailSelector) => {
         const mangaId = mangaRelationship.id;
         // It may be better to adjust the data model here, as RelationshipAttributes don't apply to the manga "includes" in this
         const mangaDetails = mangaRelationship.attributes;
+        if (mangaDetails === undefined)
+            continue;
         const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
-        const coverFileName = ''; // I don't yet have the cover file figured out
-        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
+        const image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`;
         if (!discoveredManga.has(mangaId)) {
             results.push(App.createPartialSourceManga({
@@ -4033,6 +4063,20 @@ const parseChapterListToManga = async (chapters, source, thumbnailSelector) => {
     return results;
 };
 exports.parseChapterListToManga = parseChapterListToManga;
+const addFileNamesToManga = async (manga, covers, source, thumbnailSelector) => {
+    for (const mangaItem of manga) {
+        const mangaId = mangaItem.mangaId;
+        const coverItem = covers.find((x) => x.id == mangaId);
+        if (coverItem === undefined) {
+            continue;
+        }
+        const coverFileName = coverItem.attributes.fileName;
+        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
+        mangaItem.image = image;
+    }
+    return manga;
+};
+exports.addFileNamesToManga = addFileNamesToManga;
 
 },{"./MangaDexHelper":74}],76:[function(require,module,exports){
 (function (Buffer){(function (){
