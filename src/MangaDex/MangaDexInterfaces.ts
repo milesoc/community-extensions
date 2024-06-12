@@ -68,6 +68,23 @@ export interface ChapterDatumAttributes {
     readableAt: Date;
 }
 
+export interface CoverItem {
+    id: string;
+    type: string;
+    attributes: CoverDatumAttributes;
+    relationships: Relationship[];
+}
+
+export interface CoverDatumAttributes {
+    description: string;
+    volume: null | string;
+    fileName: string;
+    locale: OriginalLanguage;
+    createdAt: Date;
+    updatedAt: Date;
+    version: number;
+}
+
 export interface AltTitle {
     ko?: string;
     ja?: string;
@@ -182,6 +199,10 @@ export interface Relationship {
 
 export interface RelationshipAttributes {
     description: string;
+    title: Title;
+    altTitles: AltTitle[];
+    lastVolume: string;
+    lastChapter: string;
     volume: null | string;
     fileName: string;
     locale: OriginalLanguage;

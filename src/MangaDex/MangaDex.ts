@@ -48,7 +48,8 @@ import {
 
 import {
     parseMangaList,
-    parseChapterListToManga
+    parseChapterListToManga,
+    addFileNamesToManga
 } from './MangaDexParser'
 
 import tagJSON from './external/tag.json'
@@ -488,7 +489,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
                             throw new Error(`Failed to parse json results for section ${section.section.title}`)
                         }
 
-                        section.section.items = await parseChapterListToManga(json.data, this, getHomepageThumbnail)
+                        section.section.items = await this.appendCoverArt(parseChapterListToManga(json.data, this), getHomepageThumbnail)
 
                         sectionCallback(section.section)
                     } else {
@@ -536,14 +537,14 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
 
             case 'latest_updates': {
                 url = new URLBuilder(this.MANGADEX_API)
-                    .addPathComponent('manga')
-                    .addQueryParameter('limit', 100)
-                    .addQueryParameter('hasAvailableChapters', true)
-                    .addQueryParameter('availableTranslatedLanguage', languages)
-                    .addQueryParameter('order', { latestUploadedChapter: 'desc' })
+                    .addPathComponent('chapter')
+                    .addQueryParameter('limit', 20)
+                    .addQueryParameter('translatedLanguage', languages)
+                    .addQueryParameter('order', { readableAt: 'desc' })
+                    .addQueryParameter('contentRating', ratings)
                     .addQueryParameter('offset', offset)
                     .addQueryParameter('contentRating', ratings)
-                    .addQueryParameter('includes', ['cover_art'])
+                    .addQueryParameter('includes', ['manga'])
                     .buildUrl()
                 break
             }
@@ -568,18 +569,52 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
             method: 'GET'
         })
         const response = await this.requestManager.schedule(request, 1)
+        if (homepageSectionId == 'latest_updates') {
+            const json: MangaDexChapterSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
 
-        const json: MangaDexSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+            if (json.data === undefined) {
+                throw new Error('Failed to parse json results for getViewMoreItems')
+            }
 
-        if (json.data === undefined) {
-            throw new Error('Failed to parse json results for getViewMoreItems')
+            results = await this.appendCoverArt(parseChapterListToManga(json.data, this), getHomepageThumbnail)
+        } else {
+            const json: MangaDexSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+
+            if (json.data === undefined) {
+                throw new Error('Failed to parse json results for getViewMoreItems')
+            }
+
+            results = await parseMangaList(json.data, this, getHomepageThumbnail)
         }
-
-        results = await parseMangaList(json.data, this, getHomepageThumbnail)
 
         return App.createPagedResults({
             results,
             metadata: { offset: offset + 100, collectedIds }
+        })
+    }
+
+    async appendCoverArt(sourceMangaAsync: Promise<PartialSourceManga[]>, thumbnailSelector: any): Promise<PartialSourceManga[]> {
+        return sourceMangaAsync.then((sourceManga) => {
+            const request = App.createRequest({
+                url: new URLBuilder(this.MANGADEX_API)
+                .addPathComponent('cover')
+                .addQueryParameter('manga', sourceManga.map((manga) => manga.mangaId))
+                .addQueryParameter('includes', ['manga'])
+                .buildUrl(),
+                method: 'GET'
+            })
+
+            const asyncResponse = this.requestManager.schedule(request, 1)
+
+            return asyncResponse.then(async (response) => {
+                if (response.status != 200) {
+                    return sourceManga
+                }
+
+                const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+
+                return addFileNamesToManga(sourceManga, json.data, this, thumbnailSelector)
+            })
         })
     }
 
