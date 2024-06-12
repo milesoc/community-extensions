@@ -70,9 +70,9 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], source: a
 export const addFileNamesToManga = async (manga: PartialSourceManga[], covers: CoverItem[], source: any, thumbnailSelector: any): Promise<PartialSourceManga[]> => {
     for (const mangaItem of manga) {
         const mangaId = mangaItem.mangaId
-        console.log(mangaId)
-        console.log(covers)
-        console.log(covers.find((x) => x.relationships.find((r) => r.type == 'manga')))
+        console.info(mangaId)
+        console.info(covers)
+        console.info(covers.find((x) => x.relationships.find((r) => r.type == 'manga')))
         
 
         const coverItem = covers.find((x) => x.relationships.find((r) => r.type == 'manga')?.id == mangaId)
