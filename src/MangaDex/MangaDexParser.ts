@@ -71,7 +71,7 @@ export const addFileNamesToManga = async (manga: PartialSourceManga[], covers: C
     for (const mangaItem of manga) {
         const mangaId = mangaItem.mangaId
 
-        const coverItem = covers.find((x) => x.id == mangaId)
+        const coverItem = covers.find((x) => x.relationships.find((r) => r.type == 'manga')?.id == mangaId)
         if (coverItem === undefined) {
             continue
         }
