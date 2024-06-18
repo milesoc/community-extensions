@@ -538,7 +538,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
             case 'latest_updates': {
                 url = new URLBuilder(this.MANGADEX_API)
                     .addPathComponent('chapter')
-                    .addQueryParameter('limit', 20)
+                    .addQueryParameter('limit', 1)
                     .addQueryParameter('translatedLanguage', languages)
                     .addQueryParameter('order', { readableAt: 'desc' })
                     .addQueryParameter('contentRating', ratings)
