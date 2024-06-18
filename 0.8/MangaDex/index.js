@@ -3565,7 +3565,8 @@ class MangaDex {
                     .addPathComponent('cover')
                     .addQueryParameter('manga', sourceManga.map((manga) => manga.mangaId))
                     .addQueryParameter('includes', ['manga'])
-                    .addQueryParameter('limit', sourceManga.length)
+                    .addQueryParameter('limit', 100)
+                    .addQueryParameter('order', { volume: 'asc' })
                     .buildUrl(),
                 method: 'GET'
             });
