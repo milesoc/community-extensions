@@ -4038,10 +4038,10 @@ const parseMangaList = async (object, source, thumbnailSelector) => {
 exports.parseMangaList = parseMangaList;
 const parseChapterListToManga = async (chapters, alreadyFound, source) => {
     const results = [];
-    // const discoveredManga: Set<string> = new Set<string>()
-    // for (const foundId of alreadyFound) {
-    //     discoveredManga.add(foundId)
-    // }
+    const discoveredManga = new Set();
+    for (const foundId of alreadyFound) {
+        discoveredManga.add(foundId);
+    }
     for (const chapter of chapters) {
         const mangaRelationship = chapter.relationships.filter((x) => x.type == 'manga')[0];
         if (mangaRelationship === undefined) {
@@ -4054,15 +4054,15 @@ const parseChapterListToManga = async (chapters, alreadyFound, source) => {
         const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
         const image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`;
-        // if (!discoveredManga.has(mangaId)) {
-        results.push(App.createPartialSourceManga({
-            mangaId: mangaId,
-            title: title,
-            image: image,
-            subtitle: subtitle
-        }));
-        //     discoveredManga.add(mangaId)
-        // }
+        if (!discoveredManga.has(mangaId)) {
+            results.push(App.createPartialSourceManga({
+                mangaId: mangaId,
+                title: title,
+                image: image,
+                subtitle: subtitle
+            }));
+            discoveredManga.add(mangaId);
+        }
     }
     return results;
 };
