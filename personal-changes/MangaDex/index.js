@@ -3544,7 +3544,7 @@ class MangaDex {
             if (json.data === undefined) {
                 throw new Error('Failed to parse json results for getViewMoreItems');
             }
-            results = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, collectedIds, this), MangaDexSettings_1.getHomepageThumbnail);
+            results = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, this), MangaDexSettings_1.getHomepageThumbnail);
         }
         else {
             const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
