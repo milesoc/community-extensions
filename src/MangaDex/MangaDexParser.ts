@@ -13,7 +13,8 @@ export const parseMangaList = async (object: MangaItem[], source: any, thumbnail
 
         const countryFlag = getCountryFlag(mangaDetails.originalLanguage)
 
-        const title = countryFlag + ' ' + source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
+        const rawTitle = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
+        const title  = countryFlag + ' ' + rawTitle;
         const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0]
         const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelectorState)}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`
@@ -48,7 +49,8 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], source: a
 
         const countryFlag = getCountryFlag(mangaDetails.originalLanguage)
         
-        const title = countryFlag + ' ' + source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
+        const rawTitle = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
+        const title  = countryFlag + ' ' + rawTitle;
         const image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`
 
