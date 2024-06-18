@@ -10,7 +10,10 @@ export const parseMangaList = async (object: MangaItem[], source: any, thumbnail
     for (const manga of object) {
         const mangaId = manga.id
         const mangaDetails = manga.attributes
-        const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
+
+        const countryFlag = getCountryFlag(mangaDetails.originalLanguage)
+
+        const title = countryFlag + ' ' + source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
         const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0]
         const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelectorState)}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`
@@ -42,8 +45,10 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], source: a
         const mangaDetails = mangaRelationship.attributes
 
         if (mangaDetails === undefined) continue
+
+        const countryFlag = getCountryFlag(mangaDetails.originalLanguage)
         
-        const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
+        const title = countryFlag + ' ' + source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
         const image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`
 
@@ -82,4 +87,26 @@ export const addFileNamesToManga = async (manga: PartialSourceManga[], covers: C
     }
 
     return manga
+}
+
+export const getCountryFlag = (language: string): string => {
+    const countryMap: { [key: string]: string } = {
+        "en": "US", 
+        "ja": "JP", 
+        "ko": "KR",
+        "zh": "CN",
+        // Add more mappings as needed
+    };
+
+    const countryCode = countryMap[language.substring(0, 2).toLowerCase()]
+    
+    if (countryCode === undefined) {
+        return ''
+    }
+
+    const codePoints = Array.from(countryCode, char => 
+        0x1F1E6 - 65 + char.charCodeAt(0)
+    )
+
+    return String.fromCodePoint(...codePoints)
 }

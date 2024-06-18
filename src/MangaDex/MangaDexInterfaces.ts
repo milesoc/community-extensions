@@ -209,6 +209,7 @@ export interface RelationshipAttributes {
     createdAt: Date;
     updatedAt: Date;
     version: number;
+    originalLanguage: OriginalLanguage;
 }
 
 export enum RelationshipType {
