@@ -3558,7 +3558,7 @@ class MangaDex {
             metadata: { offset: offset + 100, collectedIds }
         });
     }
-    async appendCoverArt(sourceMangaAsync, thumbnailSelector) {
+    async appendCoverArt(sourceMangaAsync, thumbnailSelector, offset = 0) {
         return sourceMangaAsync.then((sourceManga) => {
             const request = App.createRequest({
                 url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
@@ -3566,6 +3566,7 @@ class MangaDex {
                     .addQueryParameter('manga', sourceManga.map((manga) => manga.mangaId))
                     .addQueryParameter('includes', ['manga'])
                     .addQueryParameter('limit', 100)
+                    .addQueryParameter('offset', offset)
                     .addQueryParameter('order', { volume: 'asc' })
                     .buildUrl(),
                 method: 'GET'
@@ -3576,6 +3577,14 @@ class MangaDex {
                     return sourceManga;
                 }
                 const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
+                const total = Number(json.total);
+                const limit = Number(json.limit);
+                const offset = Number(json.offset);
+                if (total > limit + offset) {
+                    return (0, MangaDexParser_1.addFileNamesToManga)(sourceManga, json.data, this, thumbnailSelector).then((manga) => {
+                        return this.appendCoverArt(Promise.resolve(manga), thumbnailSelector, offset + limit);
+                    });
+                }
                 return (0, MangaDexParser_1.addFileNamesToManga)(sourceManga, json.data, this, thumbnailSelector);
             });
         });
