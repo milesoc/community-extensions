@@ -3470,7 +3470,7 @@ class MangaDex {
                     if (json.data === undefined) {
                         throw new Error(`Failed to parse json results for section ${section.section.title}`);
                     }
-                    section.section.items = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, this), MangaDexSettings_1.getHomepageThumbnail);
+                    section.section.items = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, [], this), MangaDexSettings_1.getHomepageThumbnail);
                     sectionCallback(section.section);
                 }
                 else {
@@ -3544,7 +3544,7 @@ class MangaDex {
             if (json.data === undefined) {
                 throw new Error('Failed to parse json results for getViewMoreItems');
             }
-            results = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, this), MangaDexSettings_1.getHomepageThumbnail);
+            results = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, collectedIds, this), MangaDexSettings_1.getHomepageThumbnail);
         }
         else {
             const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
@@ -4017,12 +4017,13 @@ exports.addFileNamesToManga = exports.parseChapterListToManga = exports.parseMan
 const MangaDexHelper_1 = require("./MangaDexHelper");
 const parseMangaList = async (object, source, thumbnailSelector) => {
     const results = [];
+    const thumbnailSelectorState = await thumbnailSelector(source.stateManager);
     for (const manga of object) {
         const mangaId = manga.id;
         const mangaDetails = manga.attributes;
         const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
         const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0];
-        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
+        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(thumbnailSelectorState)}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`;
         results.push(App.createPartialSourceManga({
             mangaId: mangaId,
@@ -4034,47 +4035,47 @@ const parseMangaList = async (object, source, thumbnailSelector) => {
     return results;
 };
 exports.parseMangaList = parseMangaList;
-const parseChapterListToManga = async (chapters, source) => {
+const parseChapterListToManga = async (chapters, alreadyFound, source) => {
     const results = [];
-    const discoveredManga = new Set();
+    // const discoveredManga: Set<string> = new Set<string>()
+    // for (const foundId of alreadyFound) {
+    //     discoveredManga.add(foundId)
+    // }
     for (const chapter of chapters) {
         const mangaRelationship = chapter.relationships.filter((x) => x.type == 'manga')[0];
         if (mangaRelationship === undefined) {
             continue;
         }
         const mangaId = mangaRelationship.id;
-        // It may be better to adjust the data model here, as RelationshipAttributes don't apply to the manga "includes" in this
         const mangaDetails = mangaRelationship.attributes;
         if (mangaDetails === undefined)
             continue;
         const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
         const image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`;
-        if (!discoveredManga.has(mangaId)) {
-            results.push(App.createPartialSourceManga({
-                mangaId: mangaId,
-                title: title,
-                image: image,
-                subtitle: subtitle
-            }));
-            discoveredManga.add(mangaId);
-        }
+        // if (!discoveredManga.has(mangaId)) {
+        results.push(App.createPartialSourceManga({
+            mangaId: mangaId,
+            title: title,
+            image: image,
+            subtitle: subtitle
+        }));
+        //     discoveredManga.add(mangaId)
+        // }
     }
     return results;
 };
 exports.parseChapterListToManga = parseChapterListToManga;
 const addFileNamesToManga = async (manga, covers, source, thumbnailSelector) => {
+    const thumbnailSelectorState = await thumbnailSelector(source.stateManager);
     for (const mangaItem of manga) {
         const mangaId = mangaItem.mangaId;
-        console.log(mangaId);
-        console.log(covers);
-        console.log(covers.find((x) => x.relationships.find((r) => r.type == 'manga')));
         const coverItem = covers.find((x) => x.relationships.find((r) => r.type == 'manga')?.id == mangaId);
         if (coverItem === undefined) {
             continue;
         }
         const coverFileName = coverItem.attributes.fileName;
-        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
+        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(thumbnailSelectorState)}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         mangaItem.image = image;
     }
     return manga;
