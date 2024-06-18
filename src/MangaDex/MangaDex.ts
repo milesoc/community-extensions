@@ -600,6 +600,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
                 .addPathComponent('cover')
                 .addQueryParameter('manga', sourceManga.map((manga) => manga.mangaId))
                 .addQueryParameter('includes', ['manga'])
+                .addQueryParameter('limit', sourceManga.length)
                 .buildUrl(),
                 method: 'GET'
             })
