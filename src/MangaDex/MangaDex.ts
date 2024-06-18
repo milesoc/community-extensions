@@ -576,7 +576,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
                 throw new Error('Failed to parse json results for getViewMoreItems')
             }
 
-            results = await this.appendCoverArt(parseChapterListToManga(json.data, collectedIds, this), getHomepageThumbnail)
+            results = await this.appendCoverArt(parseChapterListToManga(json.data, this), getHomepageThumbnail)
         } else {
             const json: MangaDexSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
 
