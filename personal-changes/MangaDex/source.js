@@ -4033,7 +4033,8 @@ const parseMangaList = async (object, source, thumbnailSelector) => {
         const mangaId = manga.id;
         const mangaDetails = manga.attributes;
         const countryFlag = (0, exports.getCountryFlag)(mangaDetails.originalLanguage);
-        const title = countryFlag + ' ' + source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
+        const rawTitle = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
+        const title = countryFlag + ' ' + rawTitle;
         const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0];
         const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(thumbnailSelectorState)}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`;
@@ -4060,7 +4061,8 @@ const parseChapterListToManga = async (chapters, source) => {
         if (mangaDetails === undefined)
             continue;
         const countryFlag = (0, exports.getCountryFlag)(mangaDetails.originalLanguage);
-        const title = countryFlag + ' ' + source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
+        const rawTitle = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined));
+        const title = countryFlag + ' ' + rawTitle;
         const image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`;
         if (!discoveredManga.has(mangaId)) {
