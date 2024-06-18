@@ -593,7 +593,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
         })
     }
 
-    async appendCoverArt(sourceMangaAsync: Promise<PartialSourceManga[]>, thumbnailSelector: any): Promise<PartialSourceManga[]> {
+    async appendCoverArt(sourceMangaAsync: Promise<PartialSourceManga[]>, thumbnailSelector: any, offset: number = 0): Promise<PartialSourceManga[]> {
         return sourceMangaAsync.then((sourceManga) => {
             const request = App.createRequest({
                 url: new URLBuilder(this.MANGADEX_API)
@@ -601,6 +601,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
                 .addQueryParameter('manga', sourceManga.map((manga) => manga.mangaId))
                 .addQueryParameter('includes', ['manga'])
                 .addQueryParameter('limit', 100)
+                .addQueryParameter('offset', offset)
                 .addQueryParameter('order', { volume: 'asc' })
                 .buildUrl(),
                 method: 'GET'
@@ -614,6 +615,16 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
                 }
 
                 const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+
+                const total = Number(json.total)
+                const limit = Number(json.limit)
+                const offset = Number(json.offset)
+
+                if (total > limit + offset) {
+                    return addFileNamesToManga(sourceManga, json.data, this, thumbnailSelector).then((manga) => {
+                        return this.appendCoverArt(Promise.resolve(manga), thumbnailSelector, offset + limit)
+                    })
+                }
 
                 return addFileNamesToManga(sourceManga, json.data, this, thumbnailSelector)
             })
