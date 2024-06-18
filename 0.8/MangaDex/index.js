@@ -3470,7 +3470,7 @@ class MangaDex {
                     if (json.data === undefined) {
                         throw new Error(`Failed to parse json results for section ${section.section.title}`);
                     }
-                    section.section.items = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, [], this), MangaDexSettings_1.getHomepageThumbnail);
+                    section.section.items = await this.appendCoverArt((0, MangaDexParser_1.parseChapterListToManga)(json.data, this), MangaDexSettings_1.getHomepageThumbnail);
                     sectionCallback(section.section);
                 }
                 else {
@@ -4046,12 +4046,9 @@ const parseMangaList = async (object, source, thumbnailSelector) => {
     return results;
 };
 exports.parseMangaList = parseMangaList;
-const parseChapterListToManga = async (chapters, alreadyFound, source) => {
+const parseChapterListToManga = async (chapters, source) => {
     const results = [];
     const discoveredManga = new Set();
-    // for (const foundId of alreadyFound) {
-    //     discoveredManga.add(foundId)
-    // }
     for (const chapter of chapters) {
         const mangaRelationship = chapter.relationships.filter((x) => x.type == 'manga')[0];
         if (mangaRelationship === undefined) {
