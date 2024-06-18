@@ -29,11 +29,11 @@ export const parseMangaList = async (object: MangaItem[], source: any, thumbnail
 
 export const parseChapterListToManga = async (chapters: ChapterItem[], alreadyFound: string[], source: any): Promise<PartialSourceManga[]> => {
     const results: PartialSourceManga[] = []
-    // const discoveredManga: Set<string> = new Set<string>()
+    const discoveredManga: Set<string> = new Set<string>()
 
-    // for (const foundId of alreadyFound) {
-    //     discoveredManga.add(foundId)
-    // }
+    for (const foundId of alreadyFound) {
+        discoveredManga.add(foundId)
+    }
 
     for (const chapter of chapters) {
         const mangaRelationship: Relationship = chapter.relationships.filter((x) => x.type == 'manga')[0] as Relationship
@@ -52,7 +52,7 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], alreadyFo
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`
 
 
-        // if (!discoveredManga.has(mangaId)) {
+        if (!discoveredManga.has(mangaId)) {
             results.push(
                 App.createPartialSourceManga({
                     mangaId: mangaId,
@@ -61,8 +61,8 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], alreadyFo
                     subtitle: subtitle
                 })
             )
-        //     discoveredManga.add(mangaId)
-        // }
+            discoveredManga.add(mangaId)
+        }
     }
 
     return results
