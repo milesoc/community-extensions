@@ -3510,7 +3510,7 @@ class MangaDex {
             case 'latest_updates': {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                     .addPathComponent('chapter')
-                    .addQueryParameter('limit', 1)
+                    .addQueryParameter('limit', 20)
                     .addQueryParameter('translatedLanguage', languages)
                     .addQueryParameter('order', { readableAt: 'desc' })
                     .addQueryParameter('contentRating', ratings)
