@@ -27,13 +27,9 @@ export const parseMangaList = async (object: MangaItem[], source: any, thumbnail
     return results
 }
 
-export const parseChapterListToManga = async (chapters: ChapterItem[], alreadyFound: string[], source: any): Promise<PartialSourceManga[]> => {
+export const parseChapterListToManga = async (chapters: ChapterItem[], source: any): Promise<PartialSourceManga[]> => {
     const results: PartialSourceManga[] = []
     const discoveredManga: Set<string> = new Set<string>()
-
-    // for (const foundId of alreadyFound) {
-    //     discoveredManga.add(foundId)
-    // }
 
     for (const chapter of chapters) {
         const mangaRelationship: Relationship = chapter.relationships.filter((x) => x.type == 'manga')[0] as Relationship

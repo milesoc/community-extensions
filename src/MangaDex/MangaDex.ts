@@ -489,7 +489,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
                             throw new Error(`Failed to parse json results for section ${section.section.title}`)
                         }
 
-                        section.section.items = await this.appendCoverArt(parseChapterListToManga(json.data, [], this), getHomepageThumbnail)
+                        section.section.items = await this.appendCoverArt(parseChapterListToManga(json.data, this), getHomepageThumbnail)
 
                         sectionCallback(section.section)
                     } else {
