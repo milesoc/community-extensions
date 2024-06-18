@@ -3510,7 +3510,7 @@ class MangaDex {
             case 'latest_updates': {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                     .addPathComponent('chapter')
-                    .addQueryParameter('limit', 20)
+                    .addQueryParameter('limit', 1)
                     .addQueryParameter('translatedLanguage', languages)
                     .addQueryParameter('order', { readableAt: 'desc' })
                     .addQueryParameter('contentRating', ratings)
@@ -4039,9 +4039,9 @@ exports.parseMangaList = parseMangaList;
 const parseChapterListToManga = async (chapters, alreadyFound, source) => {
     const results = [];
     const discoveredManga = new Set();
-    for (const foundId of alreadyFound) {
-        discoveredManga.add(foundId);
-    }
+    // for (const foundId of alreadyFound) {
+    //     discoveredManga.add(foundId)
+    // }
     for (const chapter of chapters) {
         const mangaRelationship = chapter.relationships.filter((x) => x.type == 'manga')[0];
         if (mangaRelationship === undefined) {
