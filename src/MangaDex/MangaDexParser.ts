@@ -5,13 +5,14 @@ import { MangaItem, ChapterItem, CoverItem, Relationship } from './MangaDexInter
 
 export const parseMangaList = async (object: MangaItem[], source: any, thumbnailSelector: any): Promise<PartialSourceManga[]> => {
     const results: PartialSourceManga[] = []
+    const thumbnailSelectorState = await thumbnailSelector(source.stateManager)
 
     for (const manga of object) {
         const mangaId = manga.id
         const mangaDetails = manga.attributes
         const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map(x => Object.values(x).find((v) => v !== undefined)).find((t) => t !== undefined))
         const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0]
-        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
+        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelectorState)}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`
 
         results.push(
@@ -26,9 +27,13 @@ export const parseMangaList = async (object: MangaItem[], source: any, thumbnail
     return results
 }
 
-export const parseChapterListToManga = async (chapters: ChapterItem[], source: any): Promise<PartialSourceManga[]> => {
+export const parseChapterListToManga = async (chapters: ChapterItem[], alreadyFound: string[], source: any): Promise<PartialSourceManga[]> => {
     const results: PartialSourceManga[] = []
-    const discoveredManga: Set<string> = new Set<string>()
+    // const discoveredManga: Set<string> = new Set<string>()
+
+    // for (const foundId of alreadyFound) {
+    //     discoveredManga.add(foundId)
+    // }
 
     for (const chapter of chapters) {
         const mangaRelationship: Relationship = chapter.relationships.filter((x) => x.type == 'manga')[0] as Relationship
@@ -37,11 +42,7 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], source: a
             continue;
         }
 
-
-
         const mangaId = mangaRelationship.id
-        
-        // It may be better to adjust the data model here, as RelationshipAttributes don't apply to the manga "includes" in this
         const mangaDetails = mangaRelationship.attributes
 
         if (mangaDetails === undefined) continue
@@ -51,7 +52,7 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], source: a
         const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ''} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ''}`
 
 
-        if (!discoveredManga.has(mangaId)) {
+        // if (!discoveredManga.has(mangaId)) {
             results.push(
                 App.createPartialSourceManga({
                     mangaId: mangaId,
@@ -60,20 +61,18 @@ export const parseChapterListToManga = async (chapters: ChapterItem[], source: a
                     subtitle: subtitle
                 })
             )
-            discoveredManga.add(mangaId)
-        }
+        //     discoveredManga.add(mangaId)
+        // }
     }
 
     return results
 }
 
 export const addFileNamesToManga = async (manga: PartialSourceManga[], covers: CoverItem[], source: any, thumbnailSelector: any): Promise<PartialSourceManga[]> => {
+    const thumbnailSelectorState = await thumbnailSelector(source.stateManager)
+
     for (const mangaItem of manga) {
         const mangaId = mangaItem.mangaId
-        console.log(mangaId)
-        console.log(covers)
-        console.log(covers.find((x) => x.relationships.find((r) => r.type == 'manga')))
-        
 
         const coverItem = covers.find((x) => x.relationships.find((r) => r.type == 'manga')?.id == mangaId)
         if (coverItem === undefined) {
@@ -81,7 +80,7 @@ export const addFileNamesToManga = async (manga: PartialSourceManga[], covers: C
         }
 
         const coverFileName = coverItem.attributes.fileName
-        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
+        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(thumbnailSelectorState)}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
         
         mangaItem.image = image
     }
