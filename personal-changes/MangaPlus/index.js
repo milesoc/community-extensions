@@ -468,7 +468,7 @@ const BASE_URL = 'https://mangaplus.shueisha.co.jp';
 const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api';
 const langCode = MangaPlusHelper_1.Language.ENGLISH;
 exports.MangaPlusInfo = {
-    version: '2.0.2',
+    version: '2.0.3',
     name: 'MangaPlus',
     icon: 'icon.png',
     author: 'Rinto-kun',
@@ -489,11 +489,13 @@ class MangaPlus {
                 interceptRequest: async (request) => {
                     request.headers = {
                         ...(request.headers ?? {}),
-                        ...{
-                            'Referer': `${BASE_URL}/`,
-                            'user-agent': await this.requestManager.getDefaultUserAgent()
-                        }
+                        'Referer': `${BASE_URL}/`,
+                        'user-agent': await this.requestManager.getDefaultUserAgent()
                     };
+                    if (request.url.startsWith('imageMangaId=')) {
+                        const mangaId = request.url.replace('imageMangaId=', '');
+                        request.url = await this.getThumbnailUrl(mangaId);
+                    }
                     return request;
                 },
                 interceptResponse: async (response) => {
@@ -534,6 +536,15 @@ class MangaPlus {
         const result = MangaPlusHelper_1.TitleDetailView.fromJson(response.data);
         return result.toSourceManga();
     }
+    async getThumbnailUrl(mangaId) {
+        const request = App.createRequest({
+            url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
+            method: 'GET'
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        const result = MangaPlusHelper_1.TitleDetailView.fromJson(response.data);
+        return result.title?.portraitImageUrl ?? '';
+    }
     async getChapters(mangaId) {
         const request = App.createRequest({
             url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
@@ -565,7 +576,7 @@ class MangaPlus {
     }
     async getFeaturedTitles() {
         const request = App.createRequest({
-            url: `${API_URL}/featured?lang=eng&format=json`,
+            url: `${API_URL}/featuredV2?lang=eng&clang=eng&format=json`,
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
@@ -574,7 +585,7 @@ class MangaPlus {
             throw new Error(result.error?.langPopup(MangaPlusHelper_1.Language.ENGLISH)?.body ?? 'Unknown error');
         }
         const languages = await (0, MangaPlusSettings_1.getLanguages)(this.stateManager);
-        const results = result.success?.featuredTitlesView?.contents.find(x => x.titleList && x.titleList.listName == 'WEEKLY SHONEN JUMP')?.titleList.featuredTitles
+        const results = result.success?.featuredTitlesViewV2?.contents?.find(x => x.titleList && x.titleList.listName == 'WEEKLY SHONEN JUMP')?.titleList.featuredTitles
             .filter((title) => languages.includes(title.language ?? MangaPlusHelper_1.Language.ENGLISH));
         const titles = [];
         const collectedIds = [];
@@ -865,7 +876,7 @@ class TitleDetailView {
         return App.createSourceManga({
             id: this.title?.titleId.toString() ?? '',
             mangaInfo: App.createMangaInfo({
-                image: this.title?.portraitImageUrl ?? '',
+                image: 'imageMangaId=' + this.title?.titleId,
                 titles: [this.title?.name ?? ''],
                 author: authors ? authors[0]?.trimEnd() : this.title?.author ?? '',
                 artist: authors ? authors[1]?.trimStart() : this.title?.author ?? '',
