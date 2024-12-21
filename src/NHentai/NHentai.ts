@@ -43,7 +43,7 @@ import { popularTags } from './tags.json'
 const NHENTAI_URL = 'https://nhentai.net'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '4.0.7',
+    version: '4.0.9',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -233,6 +233,30 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                 sectionID: App.createHomeSection({
                     id: 'popular-week',
                     title: 'Popular Weekly',
+                    containsMoreItems: true,
+                    type: HomeSectionType.singleRowNormal
+                })
+            },
+            {
+                request: App.createRequest({
+                    url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular-month`,
+                    method: 'GET'
+                }),
+                sectionID: App.createHomeSection({
+                    id: 'popular-month',
+                    title: 'Popular Monthly',
+                    containsMoreItems: true,
+                    type: HomeSectionType.singleRowNormal
+                })
+            },
+            {
+                request: App.createRequest({
+                    url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular`,
+                    method: 'GET'
+                }),
+                sectionID: App.createHomeSection({
+                    id: 'popular',
+                    title: 'Popular All-Time',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
                 })
